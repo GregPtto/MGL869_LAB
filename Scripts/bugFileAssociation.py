@@ -6,10 +6,15 @@ import re
 bugs_df = pd.read_csv('./CSV_files/jira_issues.csv')
 regex_java_files = r'.*\.java$'
 regex_cpp_files = r'.*\.(c\+\+|cpp|cxx|cc|c|hpp|hh|hxx|h\+\+|h)$'
+regex_versions = r'.*[2-4]\.[0-9]\.[0-9].*'
+
 results = []
 
 for _, row in bugs_df.iterrows():
     bug_id = row['Key']
+    all_affected_versions = row['Affected Versions'].split(", ")
+
+    usefull_affected_versions = ",".join([version for version in all_affected_versions if re.match(regex_versions, version)])
     
     # Recherche commits liés à ce bug
     git_log_cmd = ['git', 'log', '--grep=' + bug_id, '--oneline']
@@ -38,8 +43,8 @@ for _, row in bugs_df.iterrows():
             if (firstLine):
                 firstLine = False
             else: 
-                if ((re.match(regex_java_files, file) or re.match(regex_cpp_files, file)) and ({'Bug_ID': bug_id, 'File_Path': file} not in results)):
-                    results.append({'Bug_ID': bug_id, 'File_Path': file})
+                if ((re.match(regex_java_files, file) or re.match(regex_cpp_files, file)) and ({'Bug_ID': bug_id, 'File_Path': file, 'Affected Versions' :usefull_affected_versions} not in results)):
+                    results.append({'Bug_ID': bug_id, 'File_Path': file, 'Affected Versions': usefull_affected_versions})
 
 results_df = pd.DataFrame(results)
-results_df.to_csv('./CSV_files/bug_file_association.csv', index=False)
+results_df.to_csv('./CSV_files/bug_file_association_2.csv', index=False)
