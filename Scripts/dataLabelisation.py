@@ -1,8 +1,8 @@
 import os
 import pandas as pd
 
-bugs_file_path = r'C:\Users\Guillaume\Documents\Ecole\ETS\MGL869\MGL869_LAB\CSV_files\bug_file_association.csv'
-metrics_folder_path = r'C:\Users\Guillaume\Documents\Ecole\ETS\MGL869\MGL869_LAB\CSV_files\Metrics'
+bugs_file_path = r'C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\bug_file_association.csv'
+metrics_folder_path = r'C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Clean_Metrics'
 
 bugs_file = pd.read_csv(bugs_file_path)
 
