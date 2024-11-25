@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -9,8 +10,11 @@ from sklearn.utils import resample
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+results_folder = "model_results"
+os.makedirs(results_folder, exist_ok=True)
+
 # Charger les données
-data = pd.read_csv(r"C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Clean_Metrics\result-metrics-release-2.0.0.csv")
+data = pd.read_csv(r'C:\Users\Guillaume\Documents\Ecole\ETS\MGL869\MGL869_LAB\CSV_files\Clean_Metrics\result-metrics-release-2.0.0.csv')
 
 # Pré-traitement
 data = data.replace({',': '.'}, regex=True)
@@ -110,6 +114,11 @@ rf_auc_std = np.std(rf_AUC)
 rf_precision_std = np.std(rf_Precision)
 rf_recall_std = np.std(rf_Recall)
 
+dataTest = pd.DataFrame({"Model": ["Logistic Regression", "Random Forest"],
+    "AUC": [log_reg_auc_mean, rf_auc_mean],
+    "Precision": [log_reg_precision_mean, rf_precision_mean],
+    "Recall": [log_reg_recall_mean, rf_recall_mean]})
+
 # Afficher les résultats
 print("Logistic Regression - AUC: {:.4f} ± {:.4f}, Precision: {:.4f} ± {:.4f}, Recall: {:.4f} ± {:.4f}".format(
     log_reg_auc_mean, log_reg_auc_std, log_reg_precision_mean, log_reg_precision_std, log_reg_recall_mean, log_reg_recall_std))
@@ -118,20 +127,21 @@ print("Random Forest - AUC: {:.4f} ± {:.4f}, Precision: {:.4f} ± {:.4f}, Recal
     rf_auc_mean, rf_auc_std, rf_precision_mean, rf_precision_std, rf_recall_mean, rf_recall_std))
 
 # Matrice de confusion pour Logistic Regression
-cm_log_reg = confusion_matrix(y_test, _)
+cm_log_reg = confusion_matrix(y_test, log_reg_model.predict(X_test))
 sns.heatmap(cm_log_reg, annot=True, fmt='d', cmap="Blues", xticklabels=['No Bug', 'Bug'], yticklabels=['No Bug', 'Bug'])
 plt.title("Matrice de Confusion - Logistic Regression")
 plt.xlabel("Prédictions")
 plt.ylabel("Vraies valeurs")
-plt.show()
+plt.savefig(os.path.join(results_folder, "cm_log_reg.png"))
+plt.close()
 
 # Matrice de confusion pour Random Forest
-cm_rf = confusion_matrix(y_test, _)
+cm_rf = confusion_matrix(y_test, rf_model.predict(X_test))
 sns.heatmap(cm_rf, annot=True, fmt='d', cmap="Blues", xticklabels=['No Bug', 'Bug'], yticklabels=['No Bug', 'Bug'])
 plt.title("Matrice de Confusion - Random Forest")
 plt.xlabel("Prédictions")
 plt.ylabel("Vraies valeurs")
-plt.show()
+plt.savefig(os.path.join(results_folder, "cm_rf.png"))
 
 # Calculer les moyennes des importances des variables
 mean_log_reg_importances = np.mean(log_reg_importances, axis=0)
@@ -152,10 +162,30 @@ rf_importance_df = pd.DataFrame({
 plt.figure(figsize=(10, 6))
 sns.barplot(x='Importance', y='Feature', data=log_reg_importance_df.head(10), palette='viridis')
 plt.title("Top 10 Features - Logistic Regression")
-plt.show()
+plt.savefig(os.path.join(results_folder, "Logistic_regression_importances.png"))
 
 # Visualisation de l'importance des variables pour Random Forest
 plt.figure(figsize=(10, 6))
 sns.barplot(x='Importance', y='Feature', data=rf_importance_df.head(10), palette='viridis')
 plt.title("Top 10 Features - Random Forest")
-plt.show()
+plt.savefig(os.path.join(results_folder, "Random_forest_feature_importances.png"))
+
+readme_path = os.path.join(results_folder, "README.md")
+with open(readme_path, "w") as readme_file:
+    readme_file.write("# Model Evaluation Results\n\n")
+    readme_file.write("## Metrics\n")
+    readme_file.write(dataTest.to_markdown(index=False))
+    readme_file.write("\n\n## Visualizations\n")
+    readme_file.write("### Matrice de Confusion\n")
+    readme_file.write("|**Random Forest** | **Logistic Regression**|\n")
+    readme_file.write(":-----------------:|:-----------------------:\n")
+    readme_file.write("![Confusion Matrix](cm_rf.png) | ![Confusion Matrix](cm_log_reg.png)\n")
+    readme_file.write("\n### Feature Importances\n")
+    readme_file.write("**Random Forest**\n")
+    readme_file.write(rf_importance_df.head(10).to_markdown(index=False))
+    readme_file.write("\n---")
+    readme_file.write("\n\n**Logistic Regression**\n")
+    readme_file.write(log_reg_importance_df.head(10).to_markdown(index=False))
+    readme_file.write("\n\n|**Random Forest** | **Logistic Regression**|\n")
+    readme_file.write(":-----------------:|:-----------------------:\n")
+    readme_file.write("![Feature Importances](Random_forest_feature_importances.png) | ![Feature Importances](Logistic_regression_importances.png)\n")
