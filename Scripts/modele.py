@@ -1,86 +1,108 @@
-import pandas as pd
+# Importation des bibliothèques nécessaires
 import numpy as np
-from sklearn.model_selection import cross_validate, StratifiedKFold
+import pandas as pd
+from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_predict
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from openpyxl import Workbook
+from sklearn.metrics import roc_auc_score, recall_score, precision_score, f1_score, classification_report, roc_curve
+from sklearn.utils import resample
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-# Charger les données
-input_path = r"C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Clean_Metrics\result-metrics-release-2.0.0.csv"
-data = pd.read_csv(input_path, low_memory=False)
+# Charger vos données depuis le chemin fourni
+file_path = r"C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Clean_Metrics\result-metrics-release-2.0.0.csv"
+data = pd.read_csv(file_path)
 
-# Étape 1 : Nettoyage des données
-print("Nettoyage des données...")
-# Convertir les virgules en points dans les colonnes numériques (si applicable)
-data.replace({",": "."}, regex=True, inplace=True)
-data = data.apply(pd.to_numeric, errors="ignore")
+# Définir les features (X) et la cible (y)
+# Remplacez 'target' par le nom exact de la colonne cible de vos données
+X = data.drop(columns=['Bogue'])  # À adapter
+y = data['Bogue']  # À adapter
 
-# Supprimer les colonnes non pertinentes
-columns_to_remove = ["Kind", "Name", "Version", "CommitId"]  # Ajustez si nécessaire
-data = data.drop(columns=columns_to_remove, errors="ignore")
+# Filtrer les colonnes numériques uniquement
+X_numeric = X.select_dtypes(include=[np.number])
 
-# Séparer les features (X) et la cible (y)
-X = data.drop(columns=["Bogue"], errors="ignore")
-y = data["Bogue"]
 
-# Supprimer les colonnes non numériques
-X = X.select_dtypes(include=[np.number])
-
-# Vérification des dimensions
-print(f"Dimensions après nettoyage : X={X.shape}, y={y.shape}")
-
-# Étape 2 : Standardisation
-print("Standardisation des données...")
+# Standardiser les données
 scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+X_scaled = scaler.fit_transform(X_numeric)
 
-# Étape 3 : Définir les modèles
-print("Initialisation des modèles...")
-models = {
-    "Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
-    "Random Forest": RandomForestClassifier(n_estimators=100, random_state=42)
-}
+# Initialisation des modèles
+log_reg = LogisticRegression(max_iter=200)
+rf_clf = RandomForestClassifier(n_estimators=100, random_state=42)
 
-# Étape 4 : Définir la validation croisée
-print("Configuration de la validation croisée...")
-cv = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
-
-# Étape 5 : Validation croisée et stockage des résultats
-results = []
-output_path = r"C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\model_results.xlsx"
-
-with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
-    for model_name, model in models.items():
-        print(f"En cours d'évaluation : {model_name}")
+# Fonction pour appliquer le bootstrap et calculer les métriques
+def bootstrap_metrics(X, y, model, n_iterations=100):
+    metrics = {"auc": [], "recall": [], "precision": [], "f1": []}
+    for i in range(n_iterations):
+        # Créer un échantillon bootstrap
+        X_resampled, y_resampled = resample(X, y, random_state=i, stratify=y)
         
-        # Effectuer la validation croisée
-        cv_results = cross_validate(
-            model, X_scaled, y, cv=cv,
-            scoring=["accuracy", "precision", "recall", "f1", "roc_auc"],
-            return_train_score=False
-        )
+        # Diviser les données bootstrap en train/test
+        X_train, X_test, y_train, y_test = train_test_split(X_resampled, y_resampled, test_size=0.2, random_state=i)
         
-        # Création d'un DataFrame des résultats pour un modèle
-        model_results = pd.DataFrame({
-            "Fold": range(1, len(cv_results["test_accuracy"]) + 1),
-            "Accuracy": cv_results["test_accuracy"],
-            "Precision": cv_results["test_precision"],
-            "Recall": cv_results["test_recall"],
-            "F1 Score": cv_results["test_f1"],
-            "ROC AUC": cv_results["test_roc_auc"]
-        })
+        # Entraîner le modèle
+        model.fit(X_train, y_train)
         
-        # Calculer les moyennes des métriques
-        summary = model_results.mean().to_dict()
-        summary["Model"] = model_name
-        results.append(summary)
+        # Prédictions
+        y_pred = model.predict(X_test)
+        y_pred_prob = model.predict_proba(X_test)[:, 1] if hasattr(model, "predict_proba") else None
         
-        # Sauvegarder les résultats détaillés de chaque modèle dans un onglet Excel
-        model_results.to_excel(writer, index=False, sheet_name=model_name[:30])  # Limite à 30 caractères pour les noms d'onglet Excel
+        # Calcul des métriques
+        if y_pred_prob is not None:
+            metrics["auc"].append(roc_auc_score(y_test, y_pred_prob))
+        metrics["recall"].append(recall_score(y_test, y_pred, average="weighted"))
+        metrics["precision"].append(precision_score(y_test, y_pred, average="weighted"))
+        metrics["f1"].append(f1_score(y_test, y_pred, average="weighted"))
+    
+    return metrics
 
-# Sauvegarder le résumé des modèles dans un onglet séparé
-results_df = pd.DataFrame(results)
-results_df.to_excel(writer, index=False, sheet_name="Summary")
+# Validation croisée en 10-fold et calcul des métriques
+def cross_val_metrics(X, y, model):
+    cv = StratifiedKFold(n_splits=10, random_state=42, shuffle=True)
+    y_pred = cross_val_predict(model, X, y, cv=cv, method='predict')
+    y_pred_prob = cross_val_predict(model, X, y, cv=cv, method='predict_proba')[:, 1] if hasattr(model, "predict_proba") else None
+    
+    # Calcul des métriques
+    auc = roc_auc_score(y, y_pred_prob) if y_pred_prob is not None else None
+    recall = recall_score(y, y_pred, average="weighted")
+    precision = precision_score(y, y_pred, average="weighted")
+    f1 = f1_score(y, y_pred, average="weighted")
+    
+    return {"auc": auc, "recall": recall, "precision": precision, "f1": f1}
 
-print(f"Les résultats ont été sauvegardés dans : {output_path}")
+# Calcul des métriques pour les deux approches et les deux modèles
+metrics_log_reg_cv = cross_val_metrics(X_scaled, y, log_reg)
+metrics_rf_cv = cross_val_metrics(X_scaled, y, rf_clf)
+
+metrics_log_reg_bootstrap = bootstrap_metrics(X_scaled, y, log_reg)
+metrics_rf_bootstrap = bootstrap_metrics(X_scaled, y, rf_clf)
+
+# Affichage des résultats
+print("Logistic Regression - Cross Validation Metrics:")
+print(metrics_log_reg_cv)
+
+print("\nRandom Forest - Cross Validation Metrics:")
+print(metrics_rf_cv)
+
+print("\nLogistic Regression - Bootstrap Metrics (Mean):")
+print({k: np.mean(v) for k, v in metrics_log_reg_bootstrap.items()})
+
+print("\nRandom Forest - Bootstrap Metrics (Mean):")
+print({k: np.mean(v) for k, v in metrics_rf_bootstrap.items()})
+
+# Visualisation des résultats Bootstrap
+plt.figure(figsize=(12, 8))
+for model_metrics, label, color in zip(
+    [metrics_log_reg_bootstrap, metrics_rf_bootstrap],
+    ['Logistic Regression', 'Random Forest'],
+    ['blue', 'green']
+):
+    sns.histplot(model_metrics["auc"], color=color, label=f'{label} AUC', kde=True, stat="density")
+    sns.histplot(model_metrics["f1"], color=color, label=f'{label} F1', kde=True, alpha=0.5, stat="density")
+
+plt.title('Bootstrap Metrics Distribution - AUC and F1')
+plt.xlabel('Score')
+plt.ylabel('Density')
+plt.legend()
+plt.show()
