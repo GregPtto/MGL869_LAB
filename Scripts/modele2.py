@@ -10,11 +10,11 @@ from sklearn.utils import resample
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-results_folder = "model_results"
+results_folder = "model_results_2.2.0"
 os.makedirs(results_folder, exist_ok=True)
 
 # Charger les données
-data = pd.read_csv(r'C:\Users\Guillaume\Documents\Ecole\ETS\MGL869\MGL869_LAB\CSV_files\Clean_Metrics\result-metrics-release-2.0.0.csv')
+data = pd.read_csv(r'C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Clean_Metrics\result-metrics-release-2.2.0.csv')
 
 # Pré-traitement
 data = data.replace({',': '.'}, regex=True)
@@ -29,6 +29,8 @@ for column in data.select_dtypes(include='object').columns:
 # Vérifier les types après conversion
 print(data.dtypes)
 data['Bogue'] = data['Bogue'].astype(int)
+
+
 
 # Sélectionner les caractéristiques (toutes les colonnes sauf 'Bogue', 'Kind', 'Name', 'Version', 'CommitId', 'BaseFileName')
 X = data.drop(columns=['Bogue', 'Kind', 'Name', 'Version', 'CommitId', 'BaseFileName'])
@@ -72,23 +74,26 @@ log_reg_importances = []
 rf_importances = []
 
 # Boucle pour les échantillons bootstrap
+# Boucle pour les échantillons bootstrap
 for i in range(n_bootstraps):
-    # Créer un échantillon bootstrap
-    X_train, y_train = resample(X_scaled, y, random_state=i)
+    # Sélection des indices pour l'entraînement
+    train_indices = np.random.choice(len(X_scaled), size=len(X_scaled), replace=True)
+    test_indices = np.setdiff1d(np.arange(len(X_scaled)), train_indices)
     
-    # Créer le jeu de test en utilisant train_test_split pour gérer l'alignement des indices
-    X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.3, random_state=i)
+    # Création des ensembles d'entraînement et de test
+    X_train, y_train = X_scaled[train_indices], y.iloc[train_indices]
+    X_test, y_test = X_scaled[test_indices], y.iloc[test_indices]
     
     # Entraîner et évaluer le modèle de régression logistique
     log_reg_model.fit(X_train, y_train)
-    log_reg_auc, log_reg_precision, log_reg_recall, _ = compute_metrics(log_reg_model, X_test, y_test)
+    log_reg_auc, log_reg_precision, log_reg_recall, log_reg_predictions = compute_metrics(log_reg_model, X_test, y_test)
     log_reg_AUC.append(log_reg_auc)
     log_reg_Precision.append(log_reg_precision)
     log_reg_Recall.append(log_reg_recall)
     
     # Entraîner et évaluer le modèle Random Forest
     rf_model.fit(X_train, y_train)
-    rf_auc, rf_precision, rf_recall, _ = compute_metrics(rf_model, X_test, y_test)
+    rf_auc, rf_precision, rf_recall, rf_predictions = compute_metrics(rf_model, X_test, y_test)
     rf_AUC.append(rf_auc)
     rf_Precision.append(rf_precision)
     rf_Recall.append(rf_recall)
@@ -96,6 +101,7 @@ for i in range(n_bootstraps):
     # Stocker les importances des variables
     log_reg_importances.append(np.abs(log_reg_model.coef_[0]))  # Importances par coefficient
     rf_importances.append(rf_model.feature_importances_)  # Importances pour RandomForest
+
 
 # Calculer les moyennes et les écarts-types des résultats
 log_reg_auc_mean = np.mean(log_reg_AUC)
