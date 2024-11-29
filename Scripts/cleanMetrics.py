@@ -3,7 +3,7 @@ import re
 
 
 # Charger les données
-data = pd.read_csv(r"C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Metrics\metrics-release-2.0.0.csv", low_memory=False)
+data = pd.read_csv(r"C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Metrics\metrics-rel-storage-release-2.7.0.csv", low_memory=False)
 
 # Étape 1 : Séparer les fichiers et les entités
 file_data = data[data["Kind"] == "File"]  # Fichiers
@@ -89,6 +89,6 @@ print("Données après fusion et agrégation :")
 print(file_data.head())
 
 # Sauvegarder les résultats
-output_path = r"C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Clean_Metrics\result-metrics-release-2.0.0.csv"
+output_path = r"C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Clean_Metrics\result-metrics-rel-storage-release-2.7.0.csv"
 file_data.to_csv(output_path, index=False)
 print(f"Données nettoyées et agrégées sauvegardées dans '{output_path}'")
