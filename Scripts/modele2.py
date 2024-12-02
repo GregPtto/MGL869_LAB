@@ -10,11 +10,11 @@ from sklearn.utils import resample
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-results_folder = "model_results_2.2.0"
+results_folder = "model_results_2.0.0"
 os.makedirs(results_folder, exist_ok=True)
 
 # Charger les données
-data = pd.read_csv(r'C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Clean_Metrics\result-metrics-release-2.2.0.csv')
+data = pd.read_csv(r'C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Clean_Metrics\result-metrics-release-2.0.0.csv')
 
 # Pré-traitement
 data = data.replace({',': '.'}, regex=True)
@@ -131,6 +131,9 @@ print("Logistic Regression - AUC: {:.4f} ± {:.4f}, Precision: {:.4f} ± {:.4f},
 
 print("Random Forest - AUC: {:.4f} ± {:.4f}, Precision: {:.4f} ± {:.4f}, Recall: {:.4f} ± {:.4f}".format(
     rf_auc_mean, rf_auc_std, rf_precision_mean, rf_precision_std, rf_recall_mean, rf_recall_std))
+
+
+dataTest.to_csv(os.path.join(results_folder,"perf.csv"), index=False)
 
 # Matrice de confusion pour Logistic Regression
 cm_log_reg = confusion_matrix(y_test, log_reg_model.predict(X_test))

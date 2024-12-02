@@ -1,9 +1,10 @@
 import pandas as pd
 import re
-
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # Charger les données
-data = pd.read_csv(r"C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Metrics\metrics-rel-storage-release-2.7.0.csv", low_memory=False)
+data = pd.read_csv(r"C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Metrics\metrics-rel-release-2.3.0.csv", low_memory=False)
 
 # Étape 1 : Séparer les fichiers et les entités
 file_data = data[data["Kind"] == "File"]  # Fichiers
@@ -70,7 +71,26 @@ aggregated_metrics.columns = [
     "AvgLineCode", "SumLineCode", "MaxLineCode", "MaxNesting", "SumDeclMethod"
 ]
 
-# Étape 6 : Imputation des valeurs manquantes après l'agrégation
+# Étape 6 : Analyse de corrélation (Spearman)
+correlation_matrix = aggregated_metrics.corr(method='spearman').abs()
+sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm")
+plt.title("Matrice de corrélation (Spearman)")
+plt.show()
+
+# Suppression des variables avec une corrélation > 0.7
+threshold = 0.7
+columns_to_remove = []
+for i in range(len(correlation_matrix.columns)):
+    for j in range(i):
+        if correlation_matrix.iloc[i, j] > threshold:
+            colname = correlation_matrix.columns[i]
+            if colname not in columns_to_remove:
+                columns_to_remove.append(colname)
+
+print(f"Colonnes supprimées en raison d'une forte corrélation : {columns_to_remove}")
+aggregated_metrics.drop(columns=columns_to_remove, inplace=True)
+
+# Étape 7 : Imputation des valeurs manquantes après l'agrégation
 # Remplir les valeurs manquantes par la moyenne de chaque colonne
 aggregated_metrics.fillna(aggregated_metrics.mean(), inplace=True)
 
@@ -78,7 +98,7 @@ aggregated_metrics.fillna(aggregated_metrics.mean(), inplace=True)
 print("Statistiques des métriques agrégées :")
 print(aggregated_metrics.describe())
 
-# Étape 7 : Fusionner les métriques agrégées avec les fichiers
+# Étape 8 : Fusionner les métriques agrégées avec les fichiers
 file_data = file_data.merge(aggregated_metrics, on="BaseFileName", how="left")
 
 # Remplacer les NaN par 0 pour les fichiers sans entités associées
@@ -89,6 +109,6 @@ print("Données après fusion et agrégation :")
 print(file_data.head())
 
 # Sauvegarder les résultats
-output_path = r"C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Clean_Metrics\result-metrics-rel-storage-release-2.7.0.csv"
+output_path = r"C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Clean_Metrics\result-metrics-rel-release-2.3.0.csv"
 file_data.to_csv(output_path, index=False)
 print(f"Données nettoyées et agrégées sauvegardées dans '{output_path}'")
