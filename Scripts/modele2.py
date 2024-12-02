@@ -10,11 +10,11 @@ from sklearn.utils import resample
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-results_folder = "model_results_2.0.0"
+results_folder = "model_results_3.0.0"
 os.makedirs(results_folder, exist_ok=True)
 
 # Charger les données
-data = pd.read_csv(r'C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Clean_Metrics\result-metrics-release-2.0.0.csv')
+data = pd.read_csv(r'C:\Users\gregs\Desktop\Canada\Cours\MGL869\MGL869_LAB\CSV_files\Clean_Metrics\result-metrics-rel-release-3.0.0.csv')
 
 # Pré-traitement
 data = data.replace({',': '.'}, regex=True)
