@@ -7,7 +7,6 @@ from multiprocessing import Process
 
 git_repo_path = r'C:\Users\Guillaume\Documents\Ecole\ETS\MGL869\hive'
 understand_path = r'C:\Program Files\SciTools\bin\pc-win64\und.exe'
-#metrics_output = r'C:\Users\Guillaume\Documents\Ecole\ETS\MGL869\MGL869_LAB\CSV_files\Metrics\metrics_temp.csv'
 metrics_output_master = r'C:\Users\Guillaume\Documents\Ecole\ETS\MGL869\MGL869_LAB\CSV_files\Metrics\metrics_master.csv'
 csv_output_template = r'C:\Users\Guillaume\Documents\Ecole\ETS\MGL869\MGL869_LAB\CSV_files\Metrics\{}'
 

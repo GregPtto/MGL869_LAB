@@ -16,27 +16,16 @@ for _, row in bugs_df.iterrows():
 
     usefull_affected_versions = ",".join([version for version in all_affected_versions if re.match(regex_versions, version)])
     
-    # Recherche commits liés à ce bug
     git_log_cmd = ['git', 'log', '--grep=' + bug_id, '--oneline']
 
-    print(f"Commande exécutée : {git_log_cmd}")
     log_output = subprocess.run(git_log_cmd, capture_output=True, text=True, cwd='../hive')
-    print(f"Résultat de git log pour {bug_id} : {log_output.stdout}")
 
-
-
-    # Extraire les hash de commit
     commits = [line.split()[0] for line in log_output.stdout.splitlines()]
 
-    print(f"Numéro du commit : {commits}")
-
-
-    # Parcourir chaque commit pour trouver les fichiers modifiés
     for commit in commits:
         git_show_cmd = f"git show --name-only --oneline {commit}"
         show_output = subprocess.run(git_show_cmd, shell=True, capture_output=True, text=True, cwd='../hive')
 
-        # Ajouter chaque fichier modifié dans les résultats
         files = show_output.stdout.splitlines()
         firstLine = True
         for file in files:
@@ -47,4 +36,4 @@ for _, row in bugs_df.iterrows():
                     results.append({'Bug_ID': bug_id, 'File_Path': file, 'Affected Versions': usefull_affected_versions})
 
 results_df = pd.DataFrame(results)
-results_df.to_csv('./CSV_files/bug_file_association_2.csv', index=False)
+results_df.to_csv('./CSV_files/bug_file_association.csv', index=False)
