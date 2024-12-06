@@ -28,7 +28,8 @@ Script de collections des données :
 - [modele2.py](https://github.com/GregPtto/MGL869_LAB/tree/main/Script/modele2.py) => Construit nos deux modèles (Logistic Regression et Random Forest) et effectue les entraînements ainsi que les analyse pour chaque version mineurs. Génère également les tableaux et matrics d'analyse de performance résumé dans un fichier Readme qui met en comparaison les deux modèles.
     - CSV_files/Results/...
 
-- [PERFORMANCE.md](https://github.com/GregPtto/MGL869_LAB/tree/main/CSV_files/Results/PERFORMANCE.md) => Comparaison des 3 métriques de performance (AUC, Précision, Recall) pour les deux modèles.
+- [showPerformance.py](https://github.com/GregPtto/MGL869_LAB/tree/main/Scripts/showPerformance.py) => Construit les graphiques de performance pour les trois métriques (AUC, Précision, Recall) et génère le fichier PERFORMANCE.md
+    - [PERFORMANCE.md](https://github.com/GregPtto/MGL869_LAB/tree/main/CSV_files/Results/PERFORMANCE.md) => Comparaison des 3 métriques de performance (AUC, Précision, Recall) pour les deux modèles.
 
 ## Rapport du Laboratoire
 [Lien du rapport](https://etsmtl365-my.sharepoint.com/:w:/r/personal/gregory_pititto_1_ens_etsmtl_ca/Documents/MGL899-LAB-Rapport.docx?d=w8efb0f1954a64386858b572e90b4d18a&csf=1&web=1&e=0KeAcU)
